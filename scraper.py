@@ -2,10 +2,22 @@ import re
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 
+unique_urls = set() #Tracks Unique URLS with no duplicates 
+word_count = {} #Tracks word counts for each URL
 
 # Michael Armijo, Anthony
 def scraper(url, resp):
+
+    if resp.status != 200 or not resp.raw_response.content:
+        return[]
+    
     links = extract_next_links(url, resp)
+
+    if is_valid(url):
+        word_count = count_words(resp.raw_response.content)
+        word_count[url] = word_count  # Track word count for report
+        unique_urls.add(url)  
+
     return [link for link in links if is_valid(link)]
 
 def extract_next_links(url, resp):
@@ -18,17 +30,26 @@ def extract_next_links(url, resp):
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
-    if resp.status != 200:
-        return []
+
+
+    if resp.status != 200: #Checks if the response valid 
+        return [] #Returns an empty list if the response isn't valid 
     
-    links = []
-    soup = BeautifulSoup(resp.raw_response.content, "html.parser")
+    links = [] #Makes a list where links are going to be stored. 
+
+    soup = BeautifulSoup(resp.raw_response.content, "html.parser") #Parses HTML Content
 
     for anchor in soup.find_all("a", href=True):
         link = anchor['href'].split('#')[0]  # Remove fragment part of URL
         links.append(link)
    
     return list()
+
+def count_words(content):
+    soup = BeautifulSoup(content, 'html.parser')
+    text = soup.get_text()  # Extracts text from HTML, ignoring markup
+    words = re.findall(r'\w+', text)  # Finds all word-like strings
+    return len(words)
 
 def is_valid(url):
     # Decide whether to crawl this url or not. 

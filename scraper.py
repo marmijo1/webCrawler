@@ -1,8 +1,9 @@
 import re
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
 
-unique_urls = set() #Tracks Unique URLS with no duplicates 
+
+unique_urls = set() #Tracks Unique URLS with no duplicates
 word_count = {} #Tracks word counts for each URL
 
 # Michael Armijo, Anthony
@@ -10,6 +11,11 @@ def scraper(url, resp):
 
     if resp.status != 200 or not resp.raw_response.content:
         return[]
+
+    #Skips pages with low textual content
+    text_ratio = get_text_html_ratio(resp.raw_response.content)
+    if text_ratio < 0.2: # adjust if needed or does not work
+        return []
     
     links = extract_next_links(url, resp)
 
@@ -35,21 +41,28 @@ def extract_next_links(url, resp):
     if resp.status != 200: #Checks if the response valid 
         return [] #Returns an empty list if the response isn't valid 
     
-    links = [] #Makes a list where links are going to be stored. 
+    links = set() #Makes a list where links are going to be stored.
+                    # adjusted to make a set to store the links uniquely (no duplicates)
 
     soup = BeautifulSoup(resp.raw_response.content, "html.parser") #Parses HTML Content
 
     for anchor in soup.find_all("a", href=True):
         link = anchor['href'].split('#')[0]  # Remove fragment part of URL
-        links.append(link)
+        if link not in unique_urls: #Checking for any uniqueness
+            links.add(link)
    
-    return list()
+    return list(links) #Converts set to list for returning
 
 def count_words(content):
     soup = BeautifulSoup(content, 'html.parser')
     text = soup.get_text()  # Extracts text from HTML, ignoring markup
     words = re.findall(r'\w+', text)  # Finds all word-like strings
     return len(words)
+
+def get_text_html_ratio(content):
+    soup = BeautifulSoup(content, 'html.parser')
+    text = soup.get_text()
+    return len(text) / len(content) if len(content) > 0 else 0
 
 def is_valid(url):
     # Decide whether to crawl this url or not. 
@@ -58,6 +71,8 @@ def is_valid(url):
     try:
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
+            return False
+        if not parsed.netloc.endswith("uci.edu"): # Checks if the main domain is uci.edu, allowing subdomain
             return False
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"

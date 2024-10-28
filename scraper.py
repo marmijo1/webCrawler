@@ -20,9 +20,9 @@ def scraper(url, resp):
     links = extract_next_links(url, resp)
 
     if is_valid(url):
-        word_count = count_words(resp.raw_response.content)
-        word_count[url] = word_count  # Track word count for report
-        unique_urls.add(url)  
+        current_word_count = count_words(resp.raw_response.content)
+        word_count[url] = current_word_count  # Track word count for report
+        unique_urls.add(url)   
 
     return [link for link in links if is_valid(link)]
 
@@ -42,7 +42,7 @@ def extract_next_links(url, resp):
     if resp.raw_response and resp.raw_response.content:
         soup = BeautifulSoup(resp.raw_response.content, "html.parser")
         for link in soup.find_all('a', href=True):
-            full_url = urlparse(url)._replace(path=link['href']).geturl()
+            full_url = urljoin(url, link['href'])  # Use urljoin to handle relative URLs
             links.append(full_url)
     return links
 

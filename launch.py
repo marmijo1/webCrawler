@@ -4,6 +4,8 @@ from argparse import ArgumentParser
 from utils.server_registration import get_cache_server
 from utils.config import Config
 from crawler import Crawler
+import multiprocessing
+multiprocessing.set_start_method('spawn', force=True)
 
 
 def main(config_file, restart):

@@ -10,21 +10,33 @@ word_count = {} #Tracks word counts for each URL
 def scraper(url, resp):
 
     if resp.status != 200 or not resp.raw_response.content:
-        return[]
-
-    #Skips pages with low textual content
-    text_ratio = get_text_html_ratio(resp.raw_response.content)
-    if text_ratio < 0.2: # adjust if needed or does not work
+        print(f"Skipping {url} due to non-200 status or empty content.")
         return []
-    
-    links = extract_next_links(url, resp)
 
+    # Check the text-to-HTML ratio for content filtering
+    text_ratio = get_text_html_ratio(resp.raw_response.content)
+    if text_ratio < 0.5:  # Lowering the threshold temporarily for testing
+        print(f"Skipping {url} due to low text-to-HTML ratio: {text_ratio}")
+        return []
+
+    # Extract and filter links
+    links = extract_next_links(url, resp)
     if is_valid(url):
         current_word_count = count_words(resp.raw_response.content)
-        word_count[url] = current_word_count  # Track word count for report
-        unique_urls.add(url)   
+        word_count[url] = current_word_count  # Track word count for reporting
+        unique_urls.add(url)
 
-    return [link for link in links if is_valid(link)]
+    # Gather valid links
+    valid_links = []
+    for link in links:
+        if is_valid(link):
+            valid_links.append(link)
+        else:
+            print(f"Invalid link filtered out: {link}")
+
+    print(f"Valid links to return for {url}: {valid_links}")  # Log valid links
+    return valid_links
+
 
 def extract_next_links(url, resp):
     # Implementation required.
@@ -44,6 +56,7 @@ def extract_next_links(url, resp):
         for link in soup.find_all('a', href=True):
             full_url = urljoin(url, link['href'])  # Use urljoin to handle relative URLs
             links.append(full_url)
+            print("Discovered URL:", full_url)
     return links
 
 def count_words(content):
@@ -64,15 +77,18 @@ def is_valid(url):
     try:
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
+            print(f"Excluded {url} due to invalid scheme.")
             return False
         
         # Restrict to specified domains and paths
-        valid_domains = (".ics.uci.edu", ".cs.uci.edu", ".informatics.uci.edu", ".stat.uci.edu")
-        if not any(parsed.netloc.endswith(domain) for domain in valid_domains) and not parsed.path.startswith("today.uci.edu/department/information_computer_sciences"):
+        valid_domains = (".ics.uci.edu", ".cs.uci.edu", ".informatics.uci.edu", ".stat.uci.edu", "today.uci.edu")
+        
+        if not any(parsed.netloc.endswith(domain) for domain in valid_domains):
+            print(f"Excluded {url} due to invalid domain.")
             return False
 
         # Exclude unwanted file types
-        return not re.match(
+        if re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             r"|png|tiff?|mid|mp2|mp3|mp4"
             r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
@@ -80,7 +96,10 @@ def is_valid(url):
             r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
             r"|epub|dll|cnf|tgz|sha1"
             r"|thmx|mso|arff|rtf|jar|csv"
-            r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
+            r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower()):
+            print(f"Excluded {url} due to file type")
+            return False
+        return True
 
     except TypeError:
         print("TypeError for ", parsed)

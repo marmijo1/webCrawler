@@ -79,6 +79,10 @@ def is_valid(url):
         if parsed.scheme not in set(["http", "https"]):
             print(f"Excluded {url} due to invalid scheme.")
             return False
+
+        if "www" not in parsed.netloc:
+            print(f"Excluded {url} because it does not conatain 'www'.")
+            return False
         
         # Restrict to specified domains and paths
         valid_domains = (".ics.uci.edu", ".cs.uci.edu", ".informatics.uci.edu", ".stat.uci.edu", "today.uci.edu")

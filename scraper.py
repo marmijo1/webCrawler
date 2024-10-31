@@ -15,7 +15,7 @@ def scraper(url, resp):
 
     # Check the text-to-HTML ratio for content filtering
     text_ratio = get_text_html_ratio(resp.raw_response.content)
-    if text_ratio < 0.5:  # Lowering the threshold temporarily for testing
+    if text_ratio < 0.05:  # Lowering the threshold temporarily for testing
         print(f"Skipping {url} due to low text-to-HTML ratio: {text_ratio}")
         return []
 

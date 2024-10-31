@@ -1,3 +1,4 @@
+import hashlib
 import re
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urljoin
@@ -5,6 +6,8 @@ from urllib.parse import urlparse, urljoin
 
 unique_urls = set() #Tracks Unique URLS with no duplicates
 word_count = {} #Tracks word counts for each URL
+# content_fingerprints = set()  # Tracks fingerprints to avoid duplicate content
+
 
 # Michael Armijo, Anthony
 def scraper(url, resp):
@@ -12,6 +15,14 @@ def scraper(url, resp):
     if resp.status != 200 or not resp.raw_response.content:
         print(f"Skipping {url} due to non-200 status or empty content.")
         return []
+
+    ## Fingerprinting when needed
+    # # Generate fingerprint of the page's content
+    # content_fingerprint = generate_fingerprint(resp.raw_response.content)
+    # if content_fingerprint in content_fingerprints:
+    #     print(f"Skipping {url} due to duplicate content.")
+    #     return []
+    # content_fingerprints.add(content_fingerprint)  # Add fingerprint to the set
 
     # Check the text-to-HTML ratio for content filtering
     text_ratio = get_text_html_ratio(resp.raw_response.content)
@@ -58,6 +69,14 @@ def extract_next_links(url, resp):
             links.append(full_url)
             print("Discovered URL:", full_url)
     return links
+## fingerprinting when needed
+# def generate_fingerprint(content):
+#     """
+#     Generate a hash (fingerprint) of the page content.
+#     """
+#     soup = BeautifulSoup(content, 'html.parser')
+#     text = soup.get_text()  # Extract text from HTML
+#     return hashlib.md5(text.encode('utf-8')).hexdigest()  # Return an MD5 hash
 
 def count_words(content):
     soup = BeautifulSoup(content, 'html.parser')
@@ -78,6 +97,10 @@ def is_valid(url):
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
             print(f"Excluded {url} due to invalid scheme.")
+            return False
+
+        if "www" not in parsed.netloc: # Filters domains for "www"
+            print(f"Excluded {url} because it does not conatain 'www'.")
             return False
         
         # Restrict to specified domains and paths

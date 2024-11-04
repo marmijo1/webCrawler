@@ -4,6 +4,7 @@ from collections import Counter
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urljoin, urlunparse
 
+import os
 
 unique_urls = set() #Tracks Unique URLS with no duplicates
 #word_count = {} #Tracks word counts for each URL # combined with frequencies
@@ -178,3 +179,28 @@ def is_valid(url):
     except TypeError:
         print("TypeError for ", parsed)
         raise
+
+def write_report():
+    """
+    Writes the report data to a text file.
+    """
+    report_filename = "crawl_report.txt"
+    with open(report_filename, "w") as report_file:
+        # Unique pages found
+        report_file.write(f"Total unique pages: {len(unique_urls)}\n\n")
+
+        # Longest page information
+        report_file.write("Longest page:\n")
+        report_file.write(f"URL: {longest_page['url']}\n")
+        report_file.write(f"Word Count: {longest_page['word_count']}\n\n")
+
+        # Most common words
+        report_file.write("50 Most Common Words:\n")
+        for word, frequency in word_frequencies.most_common(50):
+            report_file.write(f"{word}: {frequency}\n")
+        report_file.write("\n")
+
+        # Subdomain information
+        report_file.write("Subdomains in uci.edu:\n")
+        for subdomain_info in sorted(subdomain_counts.items()):
+            report_file.write(f"{subdomain_info[0]}, {subdomain_info[1]}\n")

@@ -7,13 +7,11 @@ from urllib.parse import urlparse, urljoin
 
 unique_urls = set() #Tracks Unique URLS with no duplicates
 #word_count = {} #Tracks word counts for each URL # combined with frequencies
-# content_fingerprints = set()  # Tracks fingerprints to avoid duplicate content
 
 # Reporting Data
-#url_count = 0  # Total count of unique pages
 longest_page = {'url': None, 'word_count': 0}  # Track the longest page by word count
 word_frequencies = Counter() # To find the 50 most common words
-#subdomain_counts = {}  # Count unique pages per subdomain in uci.edu
+subdomain_counts = {}  # Count unique pages per subdomain in uci.edu
 
 # Michael Armijo, Anthony
 def scraper(url, resp):
@@ -22,13 +20,6 @@ def scraper(url, resp):
         print(f"Skipping {url} due to non-200 status or empty content.")
         return []
 
-    ## Fingerprinting when needed
-    # # Generate fingerprint of the page's content
-    # content_fingerprint = generate_fingerprint(resp.raw_response.content)
-    # if content_fingerprint in content_fingerprints:
-    #     print(f"Skipping {url} due to duplicate content.")
-    #     return []
-    # content_fingerprints.add(content_fingerprint)  # Add fingerprint to the set
 
     # Check the text-to-HTML ratio for content filtering
     text_ratio = get_text_html_ratio(resp.raw_response.content)
@@ -41,6 +32,7 @@ def scraper(url, resp):
     if is_valid(url):
         current_word_count = count_words_and_update_frequencies(resp.raw_response.content)
         update_longest_page(url, current_word_count)
+        track_unique_url(url) # add this function to include the subdomain counter function
         unique_urls.add(url)
 
     # Gather valid links
@@ -75,14 +67,6 @@ def extract_next_links(url, resp):
             links.append(full_url)
             print("Discovered URL:", full_url)
     return links
-## fingerprinting when needed
-# def generate_fingerprint(content):
-#     """
-#     Generate a hash (fingerprint) of the page content.
-#     """
-#     soup = BeautifulSoup(content, 'html.parser')
-#     text = soup.get_text()  # Extract text from HTML
-#     return hashlib.md5(text.encode('utf-8')).hexdigest()  # Return an MD5 hash
 
 def count_words_and_update_frequencies(content):
      #Counts words on the page for determining the longest page and simultaneously
@@ -125,6 +109,13 @@ def count_words_and_update_frequencies(content):
 
     # Return the total word count for the page
     return len(filtered_words)
+
+def track_subdomain(domain):
+    if domain.endswith(".uci.edu"):
+        if domain in subdomain_counts:
+            subdomain_counts[domain] += 1
+        else:
+            subdomain_counts[domain] = 1
 
 def update_longest_page(url, word_count):
     if word_count > longest_page['word_count']:

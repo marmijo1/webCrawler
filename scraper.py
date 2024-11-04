@@ -1,10 +1,12 @@
 import re
+import os
+import PartA
 from collections import Counter
 
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urljoin, urlunparse
 
-import os
+
 
 unique_urls = set() #Tracks Unique URLS with no duplicates
 #word_count = {} #Tracks word counts for each URL # combined with frequencies
@@ -73,7 +75,8 @@ def count_words_and_update_frequencies(content):
     #updates the word frequencies for reporting.
     soup = BeautifulSoup(content, 'html.parser')
     text = soup.get_text()
-    words = re.findall(r'\w+', text.lower())
+
+    tokens = PartA.tokenize(text)
     stop_words = {
          "a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are",
          "aren't", "as", "at",
@@ -102,7 +105,7 @@ def count_words_and_update_frequencies(content):
          "would", "wouldn't", "you", "you'd", "you'll", "you're", "you've", "your", "yours",
          "yourself", "yourselves"
      }  # stop words from the list given on assignment description used a list maker for hardcoding list( idk how else)
-    filtered_words = [word for word in words if word not in stop_words]
+    filtered_words = [word for word in tokens if word not in stop_words]
 
     # Update the word frequencies counter
     word_frequencies.update(filtered_words)

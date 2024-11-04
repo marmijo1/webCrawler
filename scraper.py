@@ -2,7 +2,7 @@ import re
 from collections import Counter
 
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse, urljoin
+from urllib.parse import urlparse, urljoin, urlunparse
 
 
 unique_urls = set() #Tracks Unique URLS with no duplicates
@@ -32,8 +32,7 @@ def scraper(url, resp):
     if is_valid(url):
         current_word_count = count_words_and_update_frequencies(resp.raw_response.content)
         update_longest_page(url, current_word_count)
-        track_unique_url(url) # add this function to include the subdomain counter function
-        unique_urls.add(url)
+        track_unique_urls(url) # add this function to include the subdomain counter function
 
     # Gather valid links
     valid_links = []
@@ -109,6 +108,20 @@ def count_words_and_update_frequencies(content):
 
     # Return the total word count for the page
     return len(filtered_words)
+
+def track_unique_urls(url):
+    # Parse the URL to remove the fragment
+    parsed_url = urlparse(url)
+    url_without_fragment = urlunparse(parsed_url._replace(fragment=""))
+
+    # Check if the URL without fragment is already tracked
+    if url_without_fragment not in unique_urls:
+        unique_urls.add(url_without_fragment)
+        track_subdomain(parsed_url.netloc)
+        return True  # Indicates that this was a new unique URL
+    else:
+        return False  # Indicates it was already in the set
+
 
 def track_subdomain(domain):
     if domain.endswith(".uci.edu"):

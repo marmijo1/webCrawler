@@ -162,8 +162,10 @@ def is_valid(url):
         valid_domains = (".ics.uci.edu", ".cs.uci.edu", ".informatics.uci.edu", ".stat.uci.edu", "today.uci.edu")
         
         if not any(parsed.netloc.endswith(domain) for domain in valid_domains):
-            print(f"Excluded {url} due to invalid domain.")
-            return False
+            
+            if not(parsed.netloc == "today.uci.edu" and parsed.path.startswith("/department/information_computer_sciences")):
+                print(f"Excluded {url} due to invalid domain.")
+                return False
 
         # Exclude unwanted file types
         if re.match(
@@ -177,6 +179,13 @@ def is_valid(url):
             r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower()):
             print(f"Excluded {url} due to file type")
             return False
+        
+        trap_patterns = [r'/sort=', r'/search']
+        for pattern in trap_patterns: 
+            if re.search(pattern, parsed.path):
+                print(f"Excluded {url} due to trap pattern: {pattern}")
+                return False
+
         return True
 
     except TypeError:
